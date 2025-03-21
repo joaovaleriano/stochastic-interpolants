@@ -40,8 +40,27 @@ def make_fc_net(hidden_sizes, in_size, out_size, inner_act, final_act, **config)
     v_net = torch.nn.Sequential(*net)
     return InputWrapper(v_net)
 
+class Squeeze(torch.nn.Module):
+    def forward(self, x):
+        return x.squeeze()
 
+def make_conv1d_net(hidden_sizes, kernel_sizes, ndim, inner_act, final_act, **config):
+    sizes = [1] + hidden_sizes + [1]
+    net = []
+    for i in range(len(sizes) - 1):
+        net.append(torch.nn.Conv1d(
+            sizes[i], sizes[i+1], kernel_sizes[i], padding="same"))
+        if i != len(sizes) - 2:
+            net.append(make_activation(inner_act))
+            continue
+        else:
+            if make_activation(final_act):
+                net.append(make_activation(final_act))
+                
+    net.append(torch.nn.Linear(ndim+1,ndim))
 
+    v_net = torch.nn.Sequential(*net)
+    return InputWrapper(v_net)
 
 
 def make_It(path='linear', gamma = None, gamma_dot = None, gg_dot = None):
